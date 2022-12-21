@@ -41,7 +41,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "mindtwo\\LaravePxMail\\Providers\\LaravelPxMailProvider"
+                "mindtwo\\LaravelPxMail\\Providers\\LaravelPxMailProvider"
             ],
             "aliases": {
             }

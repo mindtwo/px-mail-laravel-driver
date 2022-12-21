@@ -1,10 +1,10 @@
 <?php
 
-namespace mindtwo\LaravePxMail\Providers;
+namespace mindtwo\LaravelPxMail\Providers;
 
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
-use mindtwo\LaravePxMail\Mailer\PxMailTransport;
+use mindtwo\LaravelPxMail\Mailer\PxMailTransport;
 
 class LaravelPxMailProvider extends ServiceProvider
 {

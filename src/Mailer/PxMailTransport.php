@@ -1,8 +1,8 @@
 <?php
 
-namespace mindtwo\LaravePxMail\Mailer;
+namespace mindtwo\LaravelPxMail\Mailer;
 
-use mindtwo\LaravePxMail\Client\ApiClient;
+use mindtwo\LaravelPxMail\Client\ApiClient;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\MessageConverter;

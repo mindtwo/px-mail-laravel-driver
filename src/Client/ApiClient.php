@@ -31,13 +31,6 @@ class ApiClient
     private $clientSecret = null;
 
     /**
-     * Tx Mail access token
-     *
-     * @var ?string
-     */
-    private $from = null;
-
-    /**
      * Urls for available environments.
      *
      * @var string[]
@@ -59,8 +52,6 @@ class ApiClient
         $this->clientId = $config['client_id'] ?? null;
         $this->clientSecret = $config['client_secret'] ?? null;
 
-        $this->from = $config['from'] ?? null;
-
         $uri = $this->getUri();
 
         // create our pxUser macro
@@ -79,11 +70,11 @@ class ApiClient
      *
      * @throws Throwable
      */
-    public function sendMail(Email $email)
+    public function sendMail(string $from, Email $email)
     {
         try {
             foreach ($email->getTo() as $address) {
-                $response = $this->send($address->getAddress(), $email);
+                $response = $this->send($address->getAddress(), $from, $email);
             }
         } catch (Throwable $e) {
             Log::error('Failed to send message for tenant: ');
@@ -108,11 +99,11 @@ class ApiClient
      * @param Email $email
      * @return void
      */
-    private function send(string $to, Email $email)
+    private function send(string $to, string $from, Email $email)
     {
         return Http::pxMail()
             ->post("{$this->tenant}/sendMail?client_id={$this->clientId}&client_secret={$this->clientSecret}", [
-                'sender' => $this->from,
+                'sender' => $from,
                 'recipient' => $to,
                 'subject' => $email->getSubject(),
                 'body' => $email->getHtmlBody(),

@@ -15,8 +15,12 @@ class LaravelPxMailProvider extends ServiceProvider
      */
     public function boot()
     {
-        Mail::extend('txmail', function (array $config = []) {
-            return new PxMailTransport($config);
+        $this->publishes([
+            __DIR__.'/../config/px-mail.php' => config_path('px-mail.php'),
+        ], 'px-mail');
+
+        Mail::extend('txmail', function () {
+            return new PxMailTransport(config('px-mail'));
         });
     }
 
@@ -27,5 +31,9 @@ class LaravelPxMailProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/px-mail.php',
+            'px-mail'
+        );
     }
 }

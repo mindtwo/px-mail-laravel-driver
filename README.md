@@ -37,6 +37,16 @@ Inside your configuration you will also find the key:
 
 `stage` which will use your APP_ENV variable.
 
+To send mails via Laravels Mail-Facade you need to add inside your apps *mail.php* mailers section:
+
+```php
+'txmail' => [
+    'transport' => 'txmail',
+],
+```
+
+Then you need to set your apps default mailer to `'txmail'` or update your .env at the position `MAIL_MAILER`.
+
 ### Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.

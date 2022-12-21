@@ -1,0 +1,55 @@
+{
+    "name": "mindtwo/px-mail-laravel-driver",
+    "type": "proprietary",
+    "description": "A project to integrate TX Mail as mail service in Laravel.",
+    "license": "MIT",
+    "version": "1.0",
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
+    "authors": [
+        {
+            "name": "mindtwo GmbH",
+            "email": "info@mindtwo.de",
+            "homepage": "https://mindtwo.de"
+        }
+    ],
+
+    "require": {
+        "php": "^8.0",
+        "laravel/framework": "^9.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.2",
+        "pestphp/pest": "^1.22",
+        "pestphp/pest-plugin-laravel": "^1.3",
+        "orchestra/testbench": "^7.16"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "mindtwo\\LaravelPxMail\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "mindtwo\\LaravePxMail\\Providers\\LaravelPxMailProvider"
+            ],
+            "aliases": {
+            }
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}

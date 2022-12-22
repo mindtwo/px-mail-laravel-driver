@@ -3,7 +3,6 @@
     "type": "proprietary",
     "description": "A project to integrate TX Mail as mail service in Laravel.",
     "license": "MIT",
-    "version": "1.0",
     "keywords": [
         "framework",
         "laravel"

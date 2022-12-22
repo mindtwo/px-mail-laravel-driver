@@ -22,6 +22,9 @@ class PxMailTransport extends AbstractTransport
         $this->validateConfig($config);
 
         $this->client = new ApiClient($config);
+
+        // required to initialize required properties
+        parent::__construct(null, null);
     }
 
     /**

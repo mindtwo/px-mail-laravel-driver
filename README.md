@@ -1,4 +1,4 @@
-# Laravel PX-User Package
+# PX-Mail Laravel-Driver Package
 
 [![Latest Version on Packagist][ico-version]][link-packagist]
 [![Software License][ico-license]](LICENSE.md)
@@ -68,10 +68,10 @@ If you discover any security related issues, please email info@mindtwo.de instea
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
 
-[ico-version]: https://img.shields.io/packagist/v/mindtwo/px-user-laravel.svg?style=flat-square
+[ico-version]: https://img.shields.io/packagist/v/mindtwo/px-mail-laravel-driver.svg?style=flat-square
 [ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
-[ico-downloads]: https://img.shields.io/packagist/dt/mindtwo/px-user-laravel.svg?style=flat-square
-[link-packagist]: https://packagist.org/packages/mindtwo/px-user-laravel
-[link-downloads]: https://packagist.org/packages/mindtwo/px-user-laravel
+[ico-downloads]: https://img.shields.io/packagist/dt/mindtwo/px-mail-laravel-driver.svg?style=flat-square
+[link-packagist]: https://packagist.org/packages/mindtwo/px-mail-laravel-driver
+[link-downloads]: https://packagist.org/packages/mindtwo/px-mail-laravel-driver
 [link-author]: https://github.com/mindtwo
 [link-contributors]: ../../contributors

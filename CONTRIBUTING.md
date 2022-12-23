@@ -2,7 +2,7 @@
 
 Contributions are **welcome** and will be fully **credited**.
 
-We accept contributions via Pull Requests on [Github](https://github.com/mindtwo/px-user-laravel).
+We accept contributions via Pull Requests on [Github](https://github.com/mindtwo/px-mail-laravel-driver).
 
 
 ## Pull Requests

@@ -5,10 +5,19 @@ namespace mindtwo\LaravelPxMail\Client;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Part\DataPart;
 use Throwable;
 
 class ApiClient
 {
+
+    /**
+     * Tx Mail stage setting
+     *
+     * @var ?string
+     */
+    private $stage = null;
+
     /**
      * Tx Mail tenant setting
      *
@@ -107,6 +116,10 @@ class ApiClient
                 'recipient' => $to,
                 'subject' => $email->getSubject(),
                 'body' => $email->getHtmlBody(),
+                'attachments' => collect($email->getAttachments())->map(fn (DataPart $attachment) => [
+                    'filename' => $attachment->getFilename() ?? 'file.pdf',
+                    'file' => $attachment->bodyToString(),
+                ])->toArray(),
             ]);
     }
 

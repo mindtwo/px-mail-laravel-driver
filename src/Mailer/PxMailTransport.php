@@ -33,7 +33,7 @@ class PxMailTransport extends AbstractTransport
     protected function doSend(SentMessage $message): void
     {
         $email = MessageConverter::toEmail($message->getOriginalMessage());
-        $from = $email->getFrom()[0]->getAddress();
+        $from = $email->getFrom()[0];
 
         $this->client->sendMail($from, $email);
     }

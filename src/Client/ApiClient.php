@@ -88,9 +88,12 @@ class ApiClient
                 $response = $this->send($address, $from, $email);
             }
         } catch (Throwable $e) {
-            Log::error('Failed to send message for tenant: ');
-            Log::error($this->tenant);
-            Log::error($e->getMessage());
+            Log::error('Failed to send message for tenant: ', [
+                'sender' => is_string($from) ? $from : $from->getAddress(),
+                'tenant' => $this->tenant,
+                'client_id' => $this->clientId,
+                'message' => $e->getMessage(),
+            ]);
 
             return null;
         }

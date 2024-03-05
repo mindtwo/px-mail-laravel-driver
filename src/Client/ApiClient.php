@@ -45,15 +45,6 @@ class ApiClient
         private ?string $clientSecret = null,
         private string $verbosity = 'quiet',
     ) {
-        // create our pxUser macro
-        Http::macro('pxMail', function () {
-            return Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])
-            ->baseUrl($this->mailerUrl)
-            ->throw();
-        });
     }
 
     /**
@@ -121,8 +112,11 @@ class ApiClient
             'url' => $this->mailerUrl,
         ]);
 
-        // @phpstan-ignore-next-line
-        return Http::pxMail()
+        return Http::baseUrl($this->mailerUrl)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ])
             ->post("{$this->tenant}/sendMail?client_id={$this->clientId}&client_secret={$this->clientSecret}", array_filter([
                 'sender' => is_string($from) ? $from : $from->getAddress(),
                 'senderName' => is_string($from) ? null : $from->getName(),
@@ -133,6 +127,7 @@ class ApiClient
                     'filename' => $attachment->getFilename() ?? 'file.pdf',
                     'file' => $attachment->bodyToString(),
                 ])->toArray(),
-            ]));
+            ]))
+            ->throw();
     }
 }

@@ -10,6 +10,21 @@ return [
     'stage' => env('APP_ENV') === 'local' ? 'preprod' : env('APP_ENV'),
 
     /**
+     * The url for the mailer
+     *
+     * Default: env('TX_MAIL_URL', 'https://tx-mail.api.pl-x.cloud/v1/')
+     */
+    'mailer_url' => env('TX_MAIL_URL', 'https://tx-mail.api.pl-x.cloud/v1/'),
+
+    /**
+     * The verbosity for the mailer
+     * Valid values: quiet, error, verbose, debug
+     *
+     * Default: env('TX_MAIL_LOG_LEVEL', 'quiet')
+     */
+    'verbosity' => env('TX_MAIL_LOG_LEVEL', 'quiet'),
+
+    /**
      * Your tx mail tenant to send mails from
      *
      * Default: env('TX_MAIL_TENANT')

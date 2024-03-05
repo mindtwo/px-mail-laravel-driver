@@ -3,25 +3,36 @@
 namespace mindtwo\LaravelPxMail\Mailer;
 
 use mindtwo\LaravelPxMail\Client\ApiClient;
+use mindtwo\LaravelPxMail\Logging\LogVerbose;
+use mindtwo\LaravelPxMail\Logging\VerbosityEnum;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\MessageConverter;
 
 class PxMailTransport extends AbstractTransport
 {
+    use LogVerbose;
+
     protected ApiClient $client;
 
     /**
      * Create PxMailTransport instance
      *
-     * @param ApiClient $client
+     * @param array $config
      */
     public function __construct(
         array $config
     ) {
         $this->validateConfig($config);
 
-        $this->client = new ApiClient($config);
+        $this->client = new ApiClient(
+            stage: $config['stage'] ?? null,
+            mailerUrl: $config['mailer_url'] ?? null,
+            tenant: $config['tenant'] ?? null,
+            clientId: $config['client_id'] ?? null,
+            clientSecret: $config['client_secret'] ?? null,
+            verbosity: $config['verbosity'] ?? 'quiet',
+        );
 
         // required to initialize required properties
         parent::__construct(null, null);
@@ -32,6 +43,10 @@ class PxMailTransport extends AbstractTransport
      */
     protected function doSend(SentMessage $message): void
     {
+        $this->debug('Sending mail', [
+            'message' => $message->getDebug(),
+        ]);
+
         $email = MessageConverter::toEmail($message->getOriginalMessage());
         $from = $email->getFrom()[0];
 
@@ -48,8 +63,25 @@ class PxMailTransport extends AbstractTransport
         return 'txmail';
     }
 
+    /**
+     * Validate the config
+     *
+     * @param array $config
+     * @return void
+     */
     private function validateConfig(array $config)
     {
+        if (isset($config['verbosity'])) {
+            $test = VerbosityEnum::tryFrom($config['verbosity']);
+            if ($test === null) {
+                throw new \Exception("Could not load px mail driver. Config value for 'px-mail.verbosity' is invalid...", 1);
+            }
+        }
+
+        if (!isset($config['mailer_url'])) {
+            throw new \Exception("Could not load px mail driver. Config value for 'px-mail.mailer_url' is missing...", 1);
+        }
+
         if (!isset($config['tenant'])) {
             throw new \Exception("Could not load px mail driver. Config value for 'px-mail.tenant' is missing...", 1);
         }
@@ -61,5 +93,7 @@ class PxMailTransport extends AbstractTransport
         if (!isset($config['client_secret'])) {
             throw new \Exception("Could not load px mail driver. Config value for 'px-mail.client_secret' is missing...", 1);
         }
+
+        $this->debug('PxMailTransport config is valid', $config);
     }
 }

@@ -3,7 +3,7 @@
 namespace mindtwo\LaravelPxMail\Client;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use mindtwo\LaravelPxMail\Logging\LogVerbose;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Part\DataPart;
@@ -12,33 +12,7 @@ use Throwable;
 class ApiClient
 {
 
-    /**
-     * Tx Mail stage setting
-     *
-     * @var ?string
-     */
-    private $stage = null;
-
-    /**
-     * Tx Mail tenant setting
-     *
-     * @var ?string
-     */
-    private $tenant = null;
-
-    /**
-     * Tx Mail client id
-     *
-     * @var ?string
-     */
-    private $clientId = null;
-
-    /**
-     * Tx Mail client secret
-     *
-     * @var ?string
-     */
-    private $clientSecret = null;
+    use LogVerbose;
 
     /**
      * Urls for available environments.
@@ -53,23 +27,32 @@ class ApiClient
         'local' => 'https://tx-mail.api.preprod.pl-x.cloud/v1/',
     ];
 
+    /**
+     * Create a new client instance.
+     *
+     * @param string|null $stage - The stage the app runs in
+     * @param string|null $mailerUrl - The url for the mailer
+     * @param string|null $tenant - Your tx mail tenant to send mails from
+     * @param string|null $clientId - Your tx mail client id
+     * @param string|null $clientSecret - Your tx mail client secret
+     * @param string $verbosity - The verbosity for the mailer
+     */
     public function __construct(
-        private array $config = [],
+        private ?string $stage = null,
+        private ?string $mailerUrl = null,
+        private ?string $tenant = null,
+        private ?string $clientId = null,
+        private ?string $clientSecret = null,
+        private string $verbosity = 'quiet',
     ) {
-        $this->stage = $config['stage'] ?? 'prod';
-
-        $this->tenant = $config['tenant'] ?? 'plx';
-        $this->clientId = $config['client_id'] ?? null;
-        $this->clientSecret = $config['client_secret'] ?? null;
-
-        $uri = $this->getUri();
-
         // create our pxUser macro
-        Http::macro('pxMail', function () use ($uri) {
+        Http::macro('pxMail', function () {
             return Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-            ])->baseUrl($uri)->throw();
+            ])
+            ->baseUrl($this->mailerUrl)
+            ->throw();
         });
     }
 
@@ -78,32 +61,46 @@ class ApiClient
      *
      * @param  Address|string  $from
      * @param  Email  $email
-     * @return array|null
+     * @return bool
      *
      */
     public function sendMail(Address|string $from, Email $email)
     {
         try {
+            $this->log('Sending message to emails', [
+                'sender' => is_string($from) ? $from : $from->getAddress(),
+                'to' => $email->getTo(),
+                'recipient' => collect($email->getTo())->map(fn (Address $address) => $address->getAddress())->join(', '),
+                'subject' => $email->getSubject(),
+                'stage' => $this->stage,
+                'url' => $this->mailerUrl,
+            ]);
+
             foreach ($email->getTo() as $address) {
                 $response = $this->send($address, $from, $email);
             }
         } catch (Throwable $e) {
-            Log::error('Failed to send message for tenant: ', [
+            $this->error('Failed to send message for tenant: ', [
                 'sender' => is_string($from) ? $from : $from->getAddress(),
                 'tenant' => $this->tenant,
                 'client_id' => $this->clientId,
+                'stage' => $this->stage,
+                'url' => $this->mailerUrl,
                 'message' => $e->getMessage(),
             ]);
 
-            return null;
+            return false;
         }
 
-        // Check if status is 200
-        if ($response->status() === 200) {
-            return true;
-        }
+        $this->log('Send mail request was successful', [
+            'sender' => is_string($from) ? $from : $from->getAddress(),
+            'recipient' => collect($email->getTo())->map(fn (Address $address) => $address->getAddress())->join(', '),
+            'subject' => $email->getSubject(),
+            'stage' => $this->stage,
+            'url' => $this->mailerUrl,
+        ]);
 
-        return false;
+        return isset($response) && $response->ok();
     }
 
     /**
@@ -112,10 +109,19 @@ class ApiClient
      * @param Address|string $to
      * @param Address|string $from
      * @param Email $email
-     * @return void
+     * @return \Illuminate\Http\Client\Response
      */
     private function send(Address|string $to, Address|string $from, Email $email)
     {
+        $this->debug('Sending mail', [
+            'sender' => is_string($from) ? $from : $from->getAddress(),
+            'recipient' => is_string($to) ? $to : $to->getAddress(),
+            'subject' => $email->getSubject(),
+            'stage' => $this->stage,
+            'url' => $this->mailerUrl,
+        ]);
+
+        // @phpstan-ignore-next-line
         return Http::pxMail()
             ->post("{$this->tenant}/sendMail?client_id={$this->clientId}&client_secret={$this->clientSecret}", array_filter([
                 'sender' => is_string($from) ? $from : $from->getAddress(),
@@ -128,15 +134,5 @@ class ApiClient
                     'file' => $attachment->bodyToString(),
                 ])->toArray(),
             ]));
-    }
-
-    /**
-     * Get px-user uri
-     *
-     * @return string
-     */
-    private function getUri(): string
-    {
-        return isset($this->stage) ? $this->uris[$this->stage] : $this->uris['prod'];
     }
 }

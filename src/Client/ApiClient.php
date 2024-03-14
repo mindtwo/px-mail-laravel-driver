@@ -77,7 +77,7 @@ class ApiClient
                 'client_id' => $this->clientId,
                 'stage' => $this->stage,
                 'url' => $this->mailerUrl,
-                'message' => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return false;

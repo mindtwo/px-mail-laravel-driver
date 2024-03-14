@@ -71,7 +71,7 @@ class ApiClient
                 $response = $this->send($address, $from, $email);
             }
         } catch (Throwable $e) {
-            $this->error('Failed to send message for tenant: ', [
+            $this->error(sprintf('Error: %s', $e->getMessage()), [
                 'sender' => is_string($from) ? $from : $from->getAddress(),
                 'tenant' => $this->tenant,
                 'client_id' => $this->clientId,

@@ -72,6 +72,7 @@ class ApiClient
             }
         } catch (Throwable $e) {
             $this->error(sprintf('Error: %s', $e->getMessage()), [
+                'trace' => $e->getTraceAsString(),
                 'sender' => is_string($from) ? $from : $from->getAddress(),
                 'tenant' => $this->tenant,
                 'client_id' => $this->clientId,

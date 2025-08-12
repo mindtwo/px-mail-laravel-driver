@@ -3,35 +3,50 @@
 namespace mindtwo\LaravelPxMail\Mailer;
 
 use mindtwo\LaravelPxMail\Client\ApiClient;
-use mindtwo\LaravelPxMail\Logging\LogVerbose;
-use mindtwo\LaravelPxMail\Logging\VerbosityEnum;
+use mindtwo\LaravelPxMail\Exceptions\InvalidConfigException;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\MessageConverter;
 
 class PxMailTransport extends AbstractTransport
 {
-    use LogVerbose;
-
     protected ApiClient $client;
 
     /**
-     * Create PxMailTransport instance
+     * Urls for available environments.
      *
-     * @param array $config
+     * @var array<string, string>
      */
+    private $stageUrls = [
+        'testing' => 'https://tx-mail.api.dev.pl-x.cloud/v1/',
+        'prod' => 'https://tx-mail.api.pl-x.cloud/v1/',
+        'dev' => 'https://tx-mail.api.dev.pl-x.cloud/v1/',
+        'preprod' => 'https://tx-mail.api.preprod.pl-x.cloud/v1/',
+        'local' => 'https://tx-mail.api.preprod.pl-x.cloud/v1/',
+    ];
+
     public function __construct(
-        array $config
+        private ?string $tenant,
+        private ?string $clientId,
+        private ?string $clientSecret,
+        private ?string $stage = null,
+        private ?string $mailerUrl = null,
     ) {
-        $this->validateConfig($config);
+        $this->validateConfig();
+
+
+        [$stage, $mailerUrl] = $this->getMailerStageAndUrl($this->stage, $this->mailerUrl);
+
+        // Update
+        $this->stage = $stage;
+        $this->mailerUrl = rtrim($mailerUrl, '/');
 
         $this->client = new ApiClient(
-            stage: $config['stage'] ?? null,
-            mailerUrl: $config['mailer_url'] ?? null,
-            tenant: $config['tenant'] ?? null,
-            clientId: $config['client_id'] ?? null,
-            clientSecret: $config['client_secret'] ?? null,
-            verbosity: $config['verbosity'] ?? 'quiet',
+            tenant: $tenant,
+            clientId: $clientId,
+            clientSecret: $clientSecret,
+            stage: $stage,
+            mailerUrl: $mailerUrl,
         );
 
         // required to initialize required properties
@@ -43,14 +58,35 @@ class PxMailTransport extends AbstractTransport
      */
     protected function doSend(SentMessage $message): void
     {
-        $this->debug('Sending mail', [
-            'message' => $message->getDebug(),
-        ]);
-
+        // @phpstan-ignore-next-line
         $email = MessageConverter::toEmail($message->getOriginalMessage());
         $from = $email->getFrom()[0];
 
         $this->client->sendMail($from, $email);
+    }
+
+    /**
+     * Get the mailer URL based on the provided stage or URL.
+     *
+     * @param string|null $stage
+     * @param string|null $mailerUrl
+     * @return array
+     */
+    private function getMailerStageAndUrl(?string $stage, ?string $mailerUrl): array
+    {
+        if ($mailerUrl !== null && $stage !== null) {
+            return [$stage, $mailerUrl];
+        }
+
+        if ($stage !== null) {
+            $mailerUrl = $this->stageUrls[$stage] ?? null;
+            if ($mailerUrl === null) {
+                throw new InvalidConfigException("Invalid stage provided: {$stage}");
+            }
+            return [$stage, $mailerUrl];
+        }
+
+        return [app()->environment(), $mailerUrl];
     }
 
     /**
@@ -63,37 +99,21 @@ class PxMailTransport extends AbstractTransport
         return 'txmail';
     }
 
-    /**
-     * Validate the config
-     *
-     * @param array $config
-     * @return void
-     */
-    private function validateConfig(array $config)
+    private function validateConfig(): void
     {
-        if (isset($config['verbosity'])) {
-            $test = VerbosityEnum::tryFrom($config['verbosity']);
-            if ($test === null) {
-                throw new \Exception("Could not load px mail driver. Config value for 'px-mail.verbosity' is invalid...", 1);
-            }
+        // Validate required configuration
+        if (is_null($this->tenant)) {
+            throw new InvalidConfigException('Tenant must be provided.');
+        }
+        if (is_null($this->clientId)) {
+            throw new InvalidConfigException('Client ID must be provided.');
+        }
+        if (is_null($this->clientSecret)) {
+            throw new InvalidConfigException('Client Secret must be provided.');
         }
 
-        if (!isset($config['mailer_url'])) {
-            throw new \Exception("Could not load px mail driver. Config value for 'px-mail.mailer_url' is missing...", 1);
+        if (is_null($this->stage) && is_null($this->mailerUrl)) {
+            throw new InvalidConfigException('Either stage or mailerUrl must be provided.');
         }
-
-        if (!isset($config['tenant'])) {
-            throw new \Exception("Could not load px mail driver. Config value for 'px-mail.tenant' is missing...", 1);
-        }
-
-        if (!isset($config['client_id'])) {
-            throw new \Exception("Could not load px mail driver. Config value for 'px-mail.client_id' is missing...", 1);
-        }
-
-        if (!isset($config['client_secret'])) {
-            throw new \Exception("Could not load px mail driver. Config value for 'px-mail.client_secret' is missing...", 1);
-        }
-
-        $this->debug('PxMailTransport config is valid', $config);
     }
 }

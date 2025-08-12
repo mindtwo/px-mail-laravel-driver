@@ -3,7 +3,7 @@
 namespace mindtwo\LaravelPxMail\Client;
 
 use Illuminate\Support\Facades\Http;
-use mindtwo\LaravelPxMail\Logging\LogVerbose;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Part\DataPart;
@@ -12,39 +12,62 @@ use Throwable;
 class ApiClient
 {
 
-    use LogVerbose;
+    /**
+     * The stage the app runs in.
+     *
+     * @var string
+     */
+    private string $stage;
 
     /**
-     * Urls for available environments.
+     * The url for the mailer.
      *
-     * @var string[]
+     * @var string
      */
-    protected $uris = [
-        'testing' => 'https://tx-mail.api.dev.pl-x.cloud/v1/',
-        'prod' => 'https://tx-mail.api.pl-x.cloud/v1/',
-        'dev' => 'https://tx-mail.api.dev.pl-x.cloud/v1/',
-        'preprod' => 'https://tx-mail.api.preprod.pl-x.cloud/v1/',
-        'local' => 'https://tx-mail.api.preprod.pl-x.cloud/v1/',
-    ];
+    private string $mailerUrl;
+
+    /**
+     * Your tx mail tenant to send mails from.
+     *
+     * @var string
+     */
+    private string $tenant;
+
+    /**
+     * Your tx mail client id.
+     *
+     * @var string
+     */
+    private string $clientId;
+
+    /**
+     * Your tx mail client secret.
+     *
+     * @var string
+     */
+    private string $clientSecret;
 
     /**
      * Create a new client instance.
      *
-     * @param string|null $stage - The stage the app runs in
-     * @param string|null $mailerUrl - The url for the mailer
-     * @param string|null $tenant - Your tx mail tenant to send mails from
-     * @param string|null $clientId - Your tx mail client id
-     * @param string|null $clientSecret - Your tx mail client secret
-     * @param string $verbosity - The verbosity for the mailer
+     * @param string $stage - The stage the app runs in
+     * @param string $mailerUrl - The url for the mailer
+     * @param string $tenant - Your tx mail tenant to send mails from
+     * @param string $clientId - Your tx mail client id
+     * @param string $clientSecret - Your tx mail client secret
      */
     public function __construct(
-        private ?string $stage = null,
-        private ?string $mailerUrl = null,
-        private ?string $tenant = null,
-        private ?string $clientId = null,
-        private ?string $clientSecret = null,
-        private string $verbosity = 'quiet',
+        string $stage,
+        string $mailerUrl,
+        string $tenant,
+        string $clientId,
+        string $clientSecret,
     ) {
+        $this->stage = $stage;
+        $this->mailerUrl = $mailerUrl;
+        $this->tenant = $tenant;
+        $this->clientId = $clientId;
+        $this->clientSecret = $clientSecret;
     }
 
     /**
@@ -58,39 +81,22 @@ class ApiClient
     public function sendMail(Address|string $from, Email $email)
     {
         try {
-            $this->log('Sending message to emails', [
-                'sender' => is_string($from) ? $from : $from->getAddress(),
-                'to' => $email->getTo(),
-                'recipient' => collect($email->getTo())->map(fn (Address $address) => $address->getAddress())->join(', '),
-                'subject' => $email->getSubject(),
-                'stage' => $this->stage,
-                'url' => $this->mailerUrl,
-            ]);
-
             foreach ($email->getTo() as $address) {
                 $response = $this->send($address, $from, $email);
             }
         } catch (Throwable $e) {
-            $this->error(sprintf('Error: %s', $e->getMessage()), [
-                'trace' => $e->getTraceAsString(),
-                'sender' => is_string($from) ? $from : $from->getAddress(),
+
+            Log::error('Failed to send mail', [
                 'tenant' => $this->tenant,
                 'client_id' => $this->clientId,
                 'stage' => $this->stage,
                 'url' => $this->mailerUrl,
-                'error' => $e->getMessage(),
+                'sender' => is_string($from) ? $from : $from->getAddress(),
+                'message' => $e->getMessage(),
             ]);
 
             return false;
         }
-
-        $this->log('Send mail request was successful', [
-            'sender' => is_string($from) ? $from : $from->getAddress(),
-            'recipient' => collect($email->getTo())->map(fn (Address $address) => $address->getAddress())->join(', '),
-            'subject' => $email->getSubject(),
-            'stage' => $this->stage,
-            'url' => $this->mailerUrl,
-        ]);
 
         return isset($response) && $response->ok();
     }
@@ -105,30 +111,37 @@ class ApiClient
      */
     private function send(Address|string $to, Address|string $from, Email $email)
     {
-        $this->debug('Sending mail', [
-            'sender' => is_string($from) ? $from : $from->getAddress(),
-            'recipient' => is_string($to) ? $to : $to->getAddress(),
-            'subject' => $email->getSubject(),
-            'stage' => $this->stage,
-            'url' => $this->mailerUrl,
-        ]);
-
-        return Http::baseUrl($this->mailerUrl)
-            ->withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])
-            ->post("{$this->tenant}/sendMail?client_id={$this->clientId}&client_secret={$this->clientSecret}", array_filter([
+        return Http::baseUrl(
+            $this->mailerUrl
+        )
+            ->withHeaders(
+                $this->headers()
+            )
+            ->post("/{$this->tenant}/sendMail", array_filter([
                 'sender' => is_string($from) ? $from : $from->getAddress(),
                 'senderName' => is_string($from) ? null : $from->getName(),
                 'recipient' => is_string($to) ? $to : $to->getAddress(),
                 'subject' => $email->getSubject(),
-                'body' => $email->getHtmlBody(),
+                'body' => $email->getHtmlBody() ?? 'no body',
                 'attachments' => collect($email->getAttachments())->map(fn (DataPart $attachment) => [
                     'filename' => $attachment->getFilename() ?? 'file.pdf',
                     'file' => $attachment->bodyToString(),
                 ])->toArray(),
             ]))
             ->throw();
+    }
+
+    /**
+     * Get the headers for the request.
+     *
+     * @return array<string, string>
+     */
+    private function headers(): array
+    {
+        return [
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'x-m2m-authorization' => sprintf('%s:%s', $this->clientId, urlencode($this->clientSecret)),
+        ];
     }
 }

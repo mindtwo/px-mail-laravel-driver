@@ -14,7 +14,7 @@ return [
      *
      * Default: env('TX_MAIL_URL', 'https://tx-mail.api.pl-x.cloud/v1/')
      */
-    'mailer_url' => env('TX_MAIL_URL', 'https://tx-mail.api.pl-x.cloud/v1/'),
+    'mailer_url' => env('TX_MAIL_URL'),
 
     /**
      * The verbosity for the mailer

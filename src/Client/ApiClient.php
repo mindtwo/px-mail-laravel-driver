@@ -141,7 +141,7 @@ class ApiClient
         $mailJson = array_filter([
             'sender' => $sender,
             'senderName' => is_string($from) ? null : $from->getName(),
-            'recipient' => is_string($to) ? $to : $to->getAddress(),
+            'recipient' => $recipient,
             'subject' => $email->getSubject(),
             'body' => $email->getHtmlBody() ?? 'no body',
             'attachments' => collect($email->getAttachments())->map(fn (DataPart $attachment) => [
@@ -153,14 +153,18 @@ class ApiClient
         $baseUrl = $this->getBaseUrl();
 
         if ($this->debug) {
-            // Log the mail sending details
-            Log::info('Sending mail', [
-                'tenant' => $this->tenant,
-                'client_id' => $this->clientId,
-                'url' => $baseUrl,
-                'sender' => $sender,
-                'recipient' => $this->getAnonymizedEmail($to),
-            ]);
+            try {
+                // Log the mail sending details
+                Log::info('Sending mail', [
+                    'tenant' => $this->tenant,
+                    'client_id' => $this->clientId,
+                    'url' => $baseUrl,
+                    'sender' => $sender,
+                    'recipient' => $this->getAnonymizedEmail($to),
+                ]);
+            } catch (\Throwable $th) {
+                Log::error('Failed to log mail sending details');
+            }
         }
 
         // Send the mail via HTTP POST request

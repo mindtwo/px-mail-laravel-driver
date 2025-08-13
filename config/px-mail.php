@@ -17,12 +17,21 @@ return [
     'mailer_url' => env('TX_MAIL_URL'),
 
     /**
+     * The version of the mailer API to use
+     * Default: env('TX_MAIL_VERSION', 'v1')
+     *
+     * Note: This is used to determine the API endpoint URL.
+     */
+    'mailer_api_version' => env('TX_MAIL_API_VERSION', 'v1'),
+
+
+    /**
      * The verbosity for the mailer
      * Valid values: quiet, error, verbose, debug
      *
-     * Default: env('TX_MAIL_LOG_LEVEL', 'quiet')
+     * Default: env('TX_MAIL_DEBUG', false)
      */
-    'verbosity' => env('TX_MAIL_LOG_LEVEL', 'quiet'),
+    'debug' => env('TX_MAIL_DEBUG', false),
 
     /**
      * Your tx mail tenant to send mails from

@@ -1,18 +1,10 @@
-includes:
-    - vendor/larastan/larastan/extension.neon
+# includes:
+#    - phpstan-baseline.neon
 
 parameters:
-
-    paths:
-        - src/
-
-    # Level 9 is the highest level
     level: 5
-
-#    ignoreErrors:
-#        - '#PHPDoc tag @var#'
-#
-#    excludePaths:
-#        - ./*/*/FileToBeExcluded.php
-#
-#    checkMissingIterableValueType: false
+    paths:
+        - src
+        - config
+        # - database
+    tmpDir: build/phpstan

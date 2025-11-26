@@ -1,16 +1,14 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace mindtwo\LaravelPxMail\Mailer;
 
 use mindtwo\LaravelPxMail\Client\ApiClient;
-use mindtwo\LaravelPxMail\Exceptions\InvalidConfigException;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\MessageConverter;
 
 class PxMailTransport extends AbstractTransport
 {
-
     public function __construct(
         protected ApiClient $client,
     ) {
@@ -32,8 +30,6 @@ class PxMailTransport extends AbstractTransport
 
     /**
      * Get the string representation of the transport.
-     *
-     * @return string
      */
     public function __toString(): string
     {

@@ -18,7 +18,7 @@ grumphp:
     composer: ~
     phpcsfixer:
       config: '.php-cs-fixer.dist.php'
-    ecs: ~
+    # ecs: ~  # Disabled due to incompatibility with slevomat/coding-standard 8.x
     tlint: ~
   extensions:
     - Chiiya\LaravelCodeStyle\GrumPHPExtensionLoader

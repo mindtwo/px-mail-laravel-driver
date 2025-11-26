@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace mindtwo\LaravelPxMail\Providers;
 
@@ -12,10 +12,8 @@ class LaravelPxMailProvider extends ServiceProvider
 {
     /**
      * Bootstrap any package services.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->publishes([
             __DIR__.'/../../config/px-mail.php' => config_path('px-mail.php'),
@@ -26,7 +24,7 @@ class LaravelPxMailProvider extends ServiceProvider
             $clientId = config('px-mail.client_id');
             $clientSecret = config('px-mail.client_secret');
 
-            if (is_null($tenant) || is_null($clientId) || is_null($clientSecret)) {
+            if ($tenant === null || $clientId === null || $clientSecret === null) {
                 throw new InvalidConfigException('Missing required configuration for txmail: tenant, client_id, or client_secret.');
             }
 
@@ -41,27 +39,23 @@ class LaravelPxMailProvider extends ServiceProvider
                 stage: $stage,
                 mailerUrl: $mailerUrl,
                 mailerApiVersion: $mailerApiVersion,
-                debug: config('px-mail.debug', false)
+                debug: config('px-mail.debug', false),
             );
         });
 
-        Mail::extend('txmail', function () {
-            return new PxMailTransport(
-                client: app(ApiClient::class),
-            );
-        });
+        Mail::extend('txmail', fn () => new PxMailTransport(
+            client: app(ApiClient::class),
+        ));
     }
 
     /**
      * Register any application services.
-     *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(
             __DIR__.'/../../config/px-mail.php',
-            'px-mail'
+            'px-mail',
         );
     }
 }

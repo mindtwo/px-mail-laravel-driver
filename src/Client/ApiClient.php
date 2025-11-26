@@ -1,7 +1,8 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace mindtwo\LaravelPxMail\Client;
 
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use mindtwo\LaravelPxMail\Contracts\ProvidesRecipientId;
@@ -13,55 +14,8 @@ use Throwable;
 
 class ApiClient
 {
-
-    /**
-     * The stage the app runs in.
-     *
-     * @var string
-     */
-    private string $stage;
-
-    /**
-     * The url for the mailer.
-     *
-     * @var string
-     */
+    /** The url for the mailer. */
     private string $mailerUrl;
-
-    /**
-     * Your tx mail tenant to send mails from.
-     *
-     * @var string
-     */
-    private string $tenant;
-
-    /**
-     * Your tx mail client id.
-     *
-     * @var string
-     */
-    private string $clientId;
-
-    /**
-     * Your tx mail client secret.
-     *
-     * @var string
-     */
-    private string $clientSecret;
-
-    /**
-     * MailerApiVersion
-     *
-     * @var string
-     */
-    private string $mailerApiVersion;
-
-    /**
-     * Debug mode.
-     *
-     * @var bool
-     */
-    private bool $debug;
 
     /**
      * Create a new client instance.
@@ -73,31 +27,23 @@ class ApiClient
      * @param string $clientSecret - Your tx mail client secret
      */
     public function __construct(
-        string $stage,
+        private string $stage,
         string $mailerUrl,
-        string $tenant,
-        string $clientId,
-        string $clientSecret,
-        string $mailerApiVersion = 'v1',
-        bool $debug = false,
+        private string $tenant,
+        private string $clientId,
+        private string $clientSecret,
+        /** MailerApiVersion. */
+        private string $mailerApiVersion = 'v1',
+        /** Debug mode. */
+        private bool $debug = false,
     ) {
-        $this->stage = $stage;
         $this->mailerUrl = rtrim($mailerUrl, '/');
-        $this->tenant = $tenant;
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
-        $this->mailerApiVersion = $mailerApiVersion;
-
-        $this->debug = $debug;
     }
 
     /**
-     * Send mail with body
+     * Send mail with body.
      *
-     * @param  Address|string  $from
-     * @param  Email  $email
      * @return bool
-     *
      */
     public function sendMail(Address|string $from, Email $email)
     {
@@ -122,12 +68,9 @@ class ApiClient
     }
 
     /**
-     * Send mail to
+     * Send mail to.
      *
-     * @param Address|string $to
-     * @param Address|string $from
-     * @param Email $email
-     * @return \Illuminate\Http\Client\Response
+     * @return Response
      */
     private function send(Address|string $to, Address|string $from, Email $email)
     {
@@ -164,17 +107,17 @@ class ApiClient
                     'sender' => $sender,
                     'recipient' => $this->getAnonymizedEmail($to),
                 ]);
-            } catch (\Throwable $th) {
+            } catch (Throwable) {
                 Log::error('Failed to log mail sending details');
             }
         }
 
         // Send the mail via HTTP POST request
         return Http::baseUrl(
-            $baseUrl
+            $baseUrl,
         )
             ->withHeaders(
-                $this->headers()
+                $this->headers(),
             )
             ->post("/{$this->tenant}/sendMail", $mailJson)
             ->throw();
@@ -196,8 +139,6 @@ class ApiClient
 
     /**
      * Get the base URL for the API.
-     *
-     * @return string
      */
     private function getBaseUrl(): string
     {
@@ -207,8 +148,6 @@ class ApiClient
     /**
      * Anonymize the email address by replacing the local part with asterisks.
      *
-     * @param Address|string $email
-     * @return string
      * @throws RuntimeException
      */
     private function getAnonymizedEmail(Address|string $email): string
@@ -218,6 +157,7 @@ class ApiClient
         }
 
         $split = explode('@', $email);
+
         if (count($split) !== 2) {
             throw new RuntimeException('Invalid email address format.');
         }
@@ -225,7 +165,7 @@ class ApiClient
         // anonymize the local part
         // Keep the first letter and replace the rest with asterisks
         $localPart = $split[0];
-        $localPart = $localPart[0] . str_repeat('*', max(0, strlen($localPart) - 1));
+        $localPart = $localPart[0].str_repeat('*', max(0, mb_strlen($localPart) - 1));
 
         return sprintf('%s@%s', $localPart, $split[1]);
     }

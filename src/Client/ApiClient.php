@@ -4,6 +4,7 @@ namespace mindtwo\LaravelPxMail\Client;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use mindtwo\LaravelPxMail\Contracts\ProvidesRecipientId;
 use RuntimeException;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
@@ -148,6 +149,7 @@ class ApiClient
                 'filename' => $attachment->getFilename() ?? 'file.pdf',
                 'file' => $attachment->bodyToString(),
             ])->toArray(),
+            'userId' => $email instanceof ProvidesRecipientId ? $email->getRecipientUserId() : null,
         ]);
 
         $baseUrl = $this->getBaseUrl();

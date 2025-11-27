@@ -9,9 +9,7 @@ abstract class TestCase extends BaseTestCase
 {
     protected function getPackageProviders($app)
     {
-        return [
-            LaravelPxMailProvider::class,
-        ];
+        return [LaravelPxMailProvider::class];
     }
 
     protected function getEnvironmentSetUp($app): void

@@ -25,7 +25,9 @@ class LaravelPxMailProvider extends ServiceProvider
             $clientSecret = config('px-mail.client_secret');
 
             if ($tenant === null || $clientId === null || $clientSecret === null) {
-                throw new InvalidConfigException('Missing required configuration for txmail: tenant, client_id, or client_secret.');
+                throw new InvalidConfigException(
+                    'Missing required configuration for txmail: tenant, client_id, or client_secret.',
+                );
             }
 
             $stage = config('px-mail.stage');
@@ -33,9 +35,9 @@ class LaravelPxMailProvider extends ServiceProvider
             $mailerApiVersion = config('px-mail.mailer_api_version');
 
             return new ApiClient(
-                tenant: trim($tenant),
-                clientId: trim($clientId),
-                clientSecret: trim($clientSecret),
+                tenant: mb_trim($tenant),
+                clientId: mb_trim($clientId),
+                clientSecret: mb_trim($clientSecret),
                 stage: $stage,
                 mailerUrl: $mailerUrl,
                 mailerApiVersion: $mailerApiVersion,
@@ -43,9 +45,7 @@ class LaravelPxMailProvider extends ServiceProvider
             );
         });
 
-        Mail::extend('txmail', fn () => new PxMailTransport(
-            client: app(ApiClient::class),
-        ));
+        Mail::extend('txmail', fn () => new PxMailTransport(client: app(ApiClient::class)));
     }
 
     /**
@@ -53,9 +53,6 @@ class LaravelPxMailProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(
-            __DIR__.'/../../config/px-mail.php',
-            'px-mail',
-        );
+        $this->mergeConfigFrom(__DIR__.'/../../config/px-mail.php', 'px-mail');
     }
 }

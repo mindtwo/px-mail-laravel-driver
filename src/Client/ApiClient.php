@@ -37,7 +37,7 @@ class ApiClient
         /** Debug mode. */
         private bool $debug = false,
     ) {
-        $this->mailerUrl = rtrim($mailerUrl, '/');
+        $this->mailerUrl = mb_rtrim($mailerUrl, '/');
     }
 
     /**
@@ -113,12 +113,8 @@ class ApiClient
         }
 
         // Send the mail via HTTP POST request
-        return Http::baseUrl(
-            $baseUrl,
-        )
-            ->withHeaders(
-                $this->headers(),
-            )
+        return Http::baseUrl($baseUrl)
+            ->withHeaders($this->headers())
             ->post("/{$this->tenant}/sendMail", $mailJson)
             ->throw();
     }
@@ -142,7 +138,7 @@ class ApiClient
      */
     private function getBaseUrl(): string
     {
-        return sprintf('%s/%s', rtrim($this->mailerUrl, '/'), $this->mailerApiVersion);
+        return sprintf('%s/%s', mb_rtrim($this->mailerUrl, '/'), $this->mailerApiVersion);
     }
 
     /**

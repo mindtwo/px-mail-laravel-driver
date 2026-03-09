@@ -17,6 +17,8 @@ class ApiClient extends BaseApiClient
 {
     /** The url for the mailer. */
     private string $mailerUrl;
+    private ?string $contextTenant = null;
+    private ?string $contextDomain = null;
 
     /**
      * Create a new client instance.
@@ -50,6 +52,20 @@ class ApiClient extends BaseApiClient
     public function baseUrl(): string
     {
         return sprintf('%s/%s', $this->mailerUrl, $this->mailerApiVersion);
+    }
+
+    public function setContextTenant(string $tenant): static
+    {
+        $this->contextTenant = $tenant;
+
+        return $this;
+    }
+
+    public function setContextDomain(string $domain): static
+    {
+        $this->contextDomain = $domain;
+
+        return $this;
     }
 
     /**
@@ -90,8 +106,8 @@ class ApiClient extends BaseApiClient
     protected function afterConfigure(PendingRequest $client): void
     {
         $contextHeaders = array_filter([
-            'x-context-tenant-code' => $this->config('context.tenant'),
-            'x-context-domain-code' => $this->config('context.domain'),
+            'x-context-tenant-code' => $this->contextTenant,
+            'x-context-domain-code' => $this->contextDomain,
         ]);
 
         if (! empty($contextHeaders)) {
@@ -146,7 +162,7 @@ class ApiClient extends BaseApiClient
 
     private function debugLog(string $sender, Address|string $to): void
     {
-        if (! $this->config('debug', false)) {
+        if (! $this->config('debug', false) && ! $this->config('log_send', false)) {
             return;
         }
 

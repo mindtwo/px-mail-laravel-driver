@@ -24,12 +24,19 @@ return [
     'mailer_api_version' => env('TX_MAIL_API_VERSION', 'v1'),
 
     /*
-     * The verbosity for the mailer
-     * Valid values: quiet, error, verbose, debug
+     * Enable HTTP-level debug logging (requests, responses, errors).
      *
      * Default: env('TX_MAIL_DEBUG', false)
      */
     'debug' => env('TX_MAIL_DEBUG', false),
+
+    /*
+     * Log outgoing send attempts (sender, recipient, tenant, url).
+     * Can be enabled independently of debug mode.
+     *
+     * Default: env('TX_MAIL_LOG_SEND', false)
+     */
+    'log_send' => env('TX_MAIL_LOG_SEND', false),
 
     /*
      * Your tx mail tenant to send mails from

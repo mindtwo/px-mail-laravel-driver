@@ -41,7 +41,6 @@ class LaravelPxMailProvider extends ServiceProvider
                 stage: $stage,
                 mailerUrl: $mailerUrl,
                 mailerApiVersion: $mailerApiVersion,
-                debug: config('px-mail.debug', false),
             );
         });
 

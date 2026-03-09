@@ -2,17 +2,18 @@
 
 namespace mindtwo\LaravelPxMail\Client;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use mindtwo\LaravelPxMail\Contracts\ProvidesRecipientId;
+use mindtwo\TwoTility\Http\BaseApiClient;
 use RuntimeException;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Part\DataPart;
 use Throwable;
 
-class ApiClient
+class ApiClient extends BaseApiClient
 {
     /** The url for the mailer. */
     private string $mailerUrl;
@@ -34,10 +35,21 @@ class ApiClient
         private string $clientSecret,
         /** MailerApiVersion. */
         private string $mailerApiVersion = 'v1',
-        /** Debug mode. */
-        private bool $debug = false,
     ) {
         $this->mailerUrl = mb_rtrim($mailerUrl, '/');
+    }
+
+    public function apiName(): string
+    {
+        return 'px-mail';
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function baseUrl(): string
+    {
+        return sprintf('%s/%s', $this->mailerUrl, $this->mailerApiVersion);
     }
 
     /**
@@ -67,6 +79,38 @@ class ApiClient
         return isset($response) && $response->ok();
     }
 
+    protected function configBaseKey(): string
+    {
+        return 'px-mail';
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function afterConfigure(PendingRequest $client): void
+    {
+        $contextHeaders = array_filter([
+            'x-context-tenant-code' => $this->config('context.tenant'),
+            'x-context-domain-code' => $this->config('context.domain'),
+        ]);
+
+        if (! empty($contextHeaders)) {
+            $client->withHeaders($contextHeaders);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function headers(): array
+    {
+        return array_merge([
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'x-m2m-authorization' => sprintf('%s:%s', $this->clientId, urlencode($this->clientSecret)),
+        ], parent::headers());
+    }
+
     /**
      * Send mail to.
      *
@@ -82,6 +126,8 @@ class ApiClient
             throw new RuntimeException('Sender and recipient cannot be empty.');
         }
 
+        $this->debugLog($sender, $to);
+
         $mailJson = array_filter([
             'sender' => $sender,
             'senderName' => is_string($from) ? null : $from->getName(),
@@ -95,50 +141,26 @@ class ApiClient
             'userId' => $email instanceof ProvidesRecipientId ? $email->getRecipientUserId() : null,
         ]);
 
-        $baseUrl = $this->getBaseUrl();
+        return $this->client()->post("/{$this->tenant}/sendMail", $mailJson);
+    }
 
-        if ($this->debug) {
-            try {
-                // Log the mail sending details
-                Log::info('Sending mail', [
-                    'tenant' => $this->tenant,
-                    'client_id' => $this->clientId,
-                    'url' => $baseUrl,
-                    'sender' => $sender,
-                    'recipient' => $this->getAnonymizedEmail($to),
-                ]);
-            } catch (Throwable) {
-                Log::error('Failed to log mail sending details');
-            }
+    private function debugLog(string $sender, Address|string $to): void
+    {
+        if (! $this->config('debug', false)) {
+            return;
         }
 
-        // Send the mail via HTTP POST request
-        return Http::baseUrl($baseUrl)
-            ->withHeaders($this->headers())
-            ->post("/{$this->tenant}/sendMail", $mailJson)
-            ->throw();
-    }
-
-    /**
-     * Get the headers for the request.
-     *
-     * @return array<string, string>
-     */
-    private function headers(): array
-    {
-        return [
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-            'x-m2m-authorization' => sprintf('%s:%s', $this->clientId, urlencode($this->clientSecret)),
-        ];
-    }
-
-    /**
-     * Get the base URL for the API.
-     */
-    private function getBaseUrl(): string
-    {
-        return sprintf('%s/%s', mb_rtrim($this->mailerUrl, '/'), $this->mailerApiVersion);
+        try {
+            Log::info(sprintf('[%s] Sending mail', $this->apiName()), [
+                'tenant' => $this->tenant,
+                'client_id' => $this->clientId,
+                'url' => $this->baseUrl(),
+                'sender' => $sender,
+                'recipient' => $this->getAnonymizedEmail($to),
+            ]);
+        } catch (Throwable) {
+            Log::error(sprintf('[%s] Failed to log mail sending details', $this->apiName()));
+        }
     }
 
     /**

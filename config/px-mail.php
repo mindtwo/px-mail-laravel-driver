@@ -51,4 +51,10 @@ return [
      * Default: env('TX_MAIL_CLIENT_SECRET')
      */
     'client_secret' => env('TX_MAIL_CLIENT_SECRET'),
+
+    // Optional context headers sent with every request when set.
+    'context' => [
+        'tenant' => env('TX_MAIL_CONTEXT_TENANT'),
+        'domain' => env('TX_MAIL_CONTEXT_DOMAIN'),
+    ],
 ];
